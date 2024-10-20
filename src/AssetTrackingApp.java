@@ -3,8 +3,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
@@ -87,14 +85,17 @@ public class AssetTrackingApp extends JFrame {
         JButton addButton = new JButton("Add Asset");
         JButton deleteButton = new JButton("Delete Asset");
         JButton editButton = new JButton("Edit Asset");
+        JButton logoutButton = new JButton("Logout");
 
         addButton.addActionListener(e -> switchToPanel("Add"));
         deleteButton.addActionListener(e -> switchToPanel("Delete"));
         editButton.addActionListener(e -> switchToPanel("Edit"));
+        logoutButton.addActionListener(e -> logout());
 
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(editButton);
+        buttonPanel.add(logoutButton); // Add logout button
 
         panel.add(buttonPanel, BorderLayout.NORTH);
         cardPanel = new JPanel(new CardLayout());
@@ -109,10 +110,31 @@ public class AssetTrackingApp extends JFrame {
 
     // Method to create Add Asset panel
     private JPanel createAddAssetPanel() {
-        JPanel addAssetPanel = new JPanel(new GridLayout(12, 2, 10, 10));
+        JPanel addAssetPanel = new JPanel(new GridLayout(1, 2, 10, 10));
         addAssetPanel.setBorder(BorderFactory.createTitledBorder("Add Asset Information"));
 
-        // Fields for adding asset
+        // Left panel for Employee Information
+        JPanel employeeInfoPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        employeeInfoPanel.setBorder(BorderFactory.createTitledBorder("Employee Information"));
+
+        employeeFirstNameField = new JTextField();
+        employeeLastNameField = new JTextField();
+        employeeEmailField = new JTextField();
+        departmentComboBox = new JComboBox<>(DEPARTMENTS);
+
+        employeeInfoPanel.add(new JLabel("First Name:"));
+        employeeInfoPanel.add(employeeFirstNameField);
+        employeeInfoPanel.add(new JLabel("Last Name:"));
+        employeeInfoPanel.add(employeeLastNameField);
+        employeeInfoPanel.add(new JLabel("Email:"));
+        employeeInfoPanel.add(employeeEmailField);
+        employeeInfoPanel.add(new JLabel("Department:"));
+        employeeInfoPanel.add(departmentComboBox);
+
+        // Right panel for Asset Information
+        JPanel assetInfoPanel = new JPanel(new GridLayout(9, 2, 5, 5));
+        assetInfoPanel.setBorder(BorderFactory.createTitledBorder("Asset Information"));
+
         assetTagField = new JTextField();
         systemNameField = new JTextField();
         modelField = new JTextField();
@@ -121,40 +143,33 @@ public class AssetTrackingApp extends JFrame {
         ipAddressField = new JTextField();
         purchaseDateField = new JTextField();
         notesField = new JTextArea(3, 20);
-        employeeFirstNameField = new JTextField();
-        employeeLastNameField = new JTextField();
-        employeeEmailField = new JTextField();
-        departmentComboBox = new JComboBox<>(DEPARTMENTS);
+
+        assetInfoPanel.add(new JLabel("Asset Tag:"));
+        assetInfoPanel.add(assetTagField);
+        assetInfoPanel.add(new JLabel("System Name:"));
+        assetInfoPanel.add(systemNameField);
+        assetInfoPanel.add(new JLabel("Model:"));
+        assetInfoPanel.add(modelField);
+        assetInfoPanel.add(new JLabel("Manufacturer:"));
+        assetInfoPanel.add(manufacturerField);
+        assetInfoPanel.add(new JLabel("Type:"));
+        assetInfoPanel.add(typeField);
+        assetInfoPanel.add(new JLabel("IP Address:"));
+        assetInfoPanel.add(ipAddressField);
+        assetInfoPanel.add(new JLabel("Purchase Date:"));
+        assetInfoPanel.add(purchaseDateField);
+        assetInfoPanel.add(new JLabel("Notes:"));
+        assetInfoPanel.add(new JScrollPane(notesField));
+
+        // Add both panels to the main add asset panel
+        addAssetPanel.add(employeeInfoPanel);
+        addAssetPanel.add(assetInfoPanel);
 
         JButton addButton = new JButton("Add Asset");
         addButton.addActionListener(e -> addAsset());
 
-        addAssetPanel.add(new JLabel("First Name:"));
-        addAssetPanel.add(employeeFirstNameField);
-        addAssetPanel.add(new JLabel("Last Name:"));
-        addAssetPanel.add(employeeLastNameField);
-        addAssetPanel.add(new JLabel("Email:"));
-        addAssetPanel.add(employeeEmailField);
-        addAssetPanel.add(new JLabel("Asset Tag:"));
-        addAssetPanel.add(assetTagField);
-        addAssetPanel.add(new JLabel("System Name:"));
-        addAssetPanel.add(systemNameField);
-        addAssetPanel.add(new JLabel("Model:"));
-        addAssetPanel.add(modelField);
-        addAssetPanel.add(new JLabel("Manufacturer:"));
-        addAssetPanel.add(manufacturerField);
-        addAssetPanel.add(new JLabel("Type:"));
-        addAssetPanel.add(typeField);
-        addAssetPanel.add(new JLabel("IP Address:"));
-        addAssetPanel.add(ipAddressField);
-        addAssetPanel.add(new JLabel("Purchase Date:"));
-        addAssetPanel.add(purchaseDateField);
-        addAssetPanel.add(new JLabel("Notes:"));
-        addAssetPanel.add(new JScrollPane(notesField));
-        addAssetPanel.add(new JLabel("Department:"));
-        addAssetPanel.add(departmentComboBox);
-        addAssetPanel.add(new JLabel("")); // Placeholder for grid
-        addAssetPanel.add(addButton);
+        // Add button at the bottom of the main add asset panel
+        addAssetPanel.add(addButton); // Add button to the panel
 
         return addAssetPanel;
     }
@@ -253,6 +268,15 @@ public class AssetTrackingApp extends JFrame {
         add(mainPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
+    }
+
+    // Logout method to return to login panel
+    private void logout() {
+        remove(mainPanel);
+        add(loginPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+        JOptionPane.showMessageDialog(this, "You have been logged out.");
     }
 
     // Add asset to the list
@@ -374,7 +398,7 @@ class User {
     }
 }
 
-// Asset class to hold asset details
+// Asset class to hold asset details (optional, can be omitted if not used)
 class Asset {
     // Define asset properties here (optional, can be omitted if not used)
 }
