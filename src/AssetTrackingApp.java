@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class AssetTrackingApp extends JFrame {
@@ -24,9 +25,29 @@ public class AssetTrackingApp extends JFrame {
     // Static department list
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology"};
 
-    // Sample credentials for authentication
-    private static final String USERNAME = "admin";
-    private static final String PASSWORD = "password";
+    // Example users for authentication
+    private static final HashMap<String, String> users = new HashMap<>();
+    private static final HashMap<String, String> userDepartments = new HashMap<>();
+
+    static {
+        // Adding example users with their passwords
+        users.put("admin", "adminpass");
+        users.put("finance_user", "financepass");
+        users.put("hr_user", "hrpass");
+        users.put("operations_user", "operationspass");
+        users.put("sales_user", "salespass");
+        users.put("it_user", "itpass");
+
+        // Mapping users to their departments
+        userDepartments.put("admin", "Admin");
+        userDepartments.put("finance_user", "Finance");
+        userDepartments.put("hr_user", "Human Resources");
+        userDepartments.put("operations_user", "Operations");
+        userDepartments.put("sales_user", "Sales");
+        userDepartments.put("it_user", "Information Technology");
+    }
+
+    private String loggedInDepartment;
 
     // Asset class representing individual assets
     static class Asset {
@@ -224,25 +245,27 @@ public class AssetTrackingApp extends JFrame {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
 
-        if (USERNAME.equals(username) && PASSWORD.equals(password)) {
+        if (users.containsKey(username) && users.get(username).equals(password)) {
+            loggedInDepartment = userDepartments.get(username);
             showMainPanel();
+            JOptionPane.showMessageDialog(this, "Welcome, " + loggedInDepartment + " user!");
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid username or password!");
         }
     }
 
-    // Show the main panel (after login)
-    private void showMainPanel() {
-        remove(loginPanel);
-        add(mainPanel);
+    // Show login panel
+    private void showLoginPanel() {
+        remove(mainPanel);
+        add(loginPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
 
-    // Show the login panel (on logout)
-    private void showLoginPanel() {
-        remove(mainPanel);
-        add(loginPanel);
+    // Show main panel (after login)
+    private void showMainPanel() {
+        remove(loginPanel);
+        add(mainPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
@@ -263,7 +286,7 @@ public class AssetTrackingApp extends JFrame {
         }
     }
 
-    // main method
+    // Main method
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
