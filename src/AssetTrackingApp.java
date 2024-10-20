@@ -11,11 +11,11 @@ import java.util.UUID;
 
 public class AssetTrackingApp extends JFrame {
     // Asset Data Fields
-    private JTextField employeeFirstNameField, employeeLastNameField, employeeEmailField, systemNameField, modelField, manufacturerField, typeField, ipAddressField, purchaseDateField, assetTagField;
+    private JTextField employeeFirstNameField, employeeLastNameField, employeeEmailField, purchaseDateField;
     private JTextArea notesField;
-    private JComboBox<String> departmentComboBox;
     private JTable assetTable;
     private DefaultTableModel tableModel;
+    private JComboBox<String> departmentComboBox;
 
     // Authentication fields
     private JTextField usernameField;
@@ -23,7 +23,7 @@ public class AssetTrackingApp extends JFrame {
     private JPanel loginPanel, mainPanel;
 
     // Buttons
-    private JButton addButton, logoutButton, viewAssetsButton;
+    private JButton addButton, logoutButton, viewAssetsButton, editAssetButton, deleteAssetButton;
 
     // Static department list
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology"};
@@ -55,7 +55,6 @@ public class AssetTrackingApp extends JFrame {
     // Asset class representing individual assets
     static class Asset {
         private String id;  // Unique identifier (UUID)
-        private String assetTag;
         private String systemName;
         private String model;
         private String manufacturer;
@@ -69,11 +68,10 @@ public class AssetTrackingApp extends JFrame {
         private String department;
 
         // Constructor
-        public Asset(String assetTag, String systemName, String model, String manufacturer, String type, String ipAddress,
+        public Asset(String systemName, String model, String manufacturer, String type, String ipAddress,
                      String purchaseDate, String notes, String employeeFirstName, String employeeLastName,
                      String employeeEmail, String department) {
             this.id = UUID.randomUUID().toString();  // Generate unique ID
-            this.assetTag = assetTag;
             this.systemName = systemName;
             this.model = model;
             this.manufacturer = manufacturer;
@@ -88,7 +86,7 @@ public class AssetTrackingApp extends JFrame {
         }
 
         public String[] toArray() {
-            return new String[]{id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
+            return new String[]{id, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
                     employeeFirstName, employeeLastName, employeeEmail, department};
         }
 
@@ -127,7 +125,7 @@ public class AssetTrackingApp extends JFrame {
         mainPanel = new JPanel(new BorderLayout());
 
         // Form Panel (For Adding Assets)
-        JPanel formPanel = new JPanel(new GridLayout(13, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(10, 2, 10, 10));
         formPanel.setBorder(BorderFactory.createTitledBorder("Asset and Employee Information"));
 
         // Employee Data Fields
@@ -135,13 +133,13 @@ public class AssetTrackingApp extends JFrame {
         employeeLastNameField = new JTextField();
         employeeEmailField = new JTextField();
 
-        // Asset Data Fields (Some are auto-filled from the system)
-        assetTagField = new JTextField();
-        systemNameField = new JTextField(getSystemName());
-        modelField = new JTextField("Auto Model");
-        manufacturerField = new JTextField("Auto Manufacturer");
-        typeField = new JTextField("Auto Type");
-        ipAddressField = new JTextField(getSystemIpAddress());
+        // Asset Data Fields (Auto-filled from the system)
+        String systemName = getSystemName();
+        String ipAddress = getSystemIpAddress();
+        String model = "Auto Model";
+        String manufacturer = "Auto Manufacturer";
+        String type = "Auto Type";
+
         purchaseDateField = new JTextField();
         notesField = new JTextArea(3, 20);
 
@@ -157,18 +155,11 @@ public class AssetTrackingApp extends JFrame {
         formPanel.add(employeeEmailField);
         formPanel.add(new JLabel("Department:"));
         formPanel.add(departmentComboBox);
-        formPanel.add(new JLabel("Asset Tag Number:"));
-        formPanel.add(assetTagField);
-        formPanel.add(new JLabel("System Name:"));
-        formPanel.add(systemNameField);
-        formPanel.add(new JLabel("Model:"));
-        formPanel.add(modelField);
-        formPanel.add(new JLabel("Manufacturer:"));
-        formPanel.add(manufacturerField);
-        formPanel.add(new JLabel("Type:"));
-        formPanel.add(typeField);
-        formPanel.add(new JLabel("IP Address:"));
-        formPanel.add(ipAddressField);
+        formPanel.add(new JLabel("System Name: " + systemName));
+        formPanel.add(new JLabel("IP Address: " + ipAddress));
+        formPanel.add(new JLabel("Model: " + model));
+        formPanel.add(new JLabel("Manufacturer: " + manufacturer));
+        formPanel.add(new JLabel("Type: " + type));
         formPanel.add(new JLabel("Purchase Date:"));
         formPanel.add(purchaseDateField);
         formPanel.add(new JLabel("Notes:"));
@@ -177,7 +168,7 @@ public class AssetTrackingApp extends JFrame {
         mainPanel.add(formPanel, BorderLayout.NORTH);
 
         // Table for displaying asset data
-        String[] columnNames = {"ID", "Asset Tag", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Purchase Date", "Notes", "Employee First Name", "Employee Last Name", "Employee Email", "Department"};
+        String[] columnNames = {"ID", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Purchase Date", "Notes", "Employee First Name", "Employee Last Name", "Employee Email", "Department"};
         tableModel = new DefaultTableModel(columnNames, 0);
         assetTable = new JTable(tableModel);
         JScrollPane tableScrollPane = new JScrollPane(assetTable);
@@ -188,9 +179,13 @@ public class AssetTrackingApp extends JFrame {
         addButton = new JButton("Add Asset");
         logoutButton = new JButton("Logout");
         viewAssetsButton = new JButton("View My Department's Assets");
+        editAssetButton = new JButton("Edit Asset");
+        deleteAssetButton = new JButton("Delete Asset");
 
         buttonPanel.add(addButton);
         buttonPanel.add(viewAssetsButton);
+        buttonPanel.add(editAssetButton);
+        buttonPanel.add(deleteAssetButton);
         buttonPanel.add(logoutButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -198,12 +193,30 @@ public class AssetTrackingApp extends JFrame {
         addButton.setVisible(false);
         logoutButton.setVisible(false);
         viewAssetsButton.setVisible(false);
+        editAssetButton.setVisible(false);
+        deleteAssetButton.setVisible(false);
 
         // Button Action Listener for adding assets
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                addAsset();
+                addAsset(systemName, model, manufacturer, type, ipAddress);
+            }
+        });
+
+        // Button Action Listener for editing assets
+        editAssetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editAsset();
+            }
+        });
+
+        // Button Action Listener for deleting assets
+        deleteAssetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteAsset();
             }
         });
 
@@ -233,14 +246,13 @@ public class AssetTrackingApp extends JFrame {
     }
 
     // Function to add asset
-    private void addAsset() {
+    private void addAsset(String systemName, String model, String manufacturer, String type, String ipAddress) {
         Asset asset = new Asset(
-                assetTagField.getText(),
-                systemNameField.getText(),
-                modelField.getText(),
-                manufacturerField.getText(),
-                typeField.getText(),
-                ipAddressField.getText(),
+                systemName,
+                model,
+                manufacturer,
+                type,
+                ipAddress,
                 purchaseDateField.getText(),
                 notesField.getText(),
                 employeeFirstNameField.getText(),
@@ -253,6 +265,37 @@ public class AssetTrackingApp extends JFrame {
         clearFields();
     }
 
+    // Function to edit an asset
+    private void editAsset() {
+        int selectedRow = assetTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            Asset asset = assets.get(selectedRow);
+            asset.employeeFirstName = employeeFirstNameField.getText();
+            asset.employeeLastName = employeeLastNameField.getText();
+            asset.employeeEmail = employeeEmailField.getText();
+            asset.purchaseDate = purchaseDateField.getText();
+            asset.notes = notesField.getText();
+            tableModel.setValueAt(asset.employeeFirstName, selectedRow, 8);
+            tableModel.setValueAt(asset.employeeLastName, selectedRow, 9);
+            tableModel.setValueAt(asset.employeeEmail, selectedRow, 10);
+            tableModel.setValueAt(asset.purchaseDate, selectedRow, 6);
+            tableModel.setValueAt(asset.notes, selectedRow, 7);
+        } else {
+            JOptionPane.showMessageDialog(this, "Select an asset to edit");
+        }
+    }
+
+    // Function to delete an asset
+    private void deleteAsset() {
+        int selectedRow = assetTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            assets.remove(selectedRow);
+            tableModel.removeRow(selectedRow);
+        } else {
+            JOptionPane.showMessageDialog(this, "Select an asset to delete");
+        }
+    }
+
     // Filter assets by department
     private void filterAssetsByDepartment() {
         tableModel.setRowCount(0);  // Clear the table
@@ -263,17 +306,31 @@ public class AssetTrackingApp extends JFrame {
         }
     }
 
-    // Function to clear input fields
-    private void clearFields() {
-        assetTagField.setText("");
-        employeeFirstNameField.setText("");
-        employeeLastNameField.setText("");
-        employeeEmailField.setText("");
-        purchaseDateField.setText("");
-        notesField.setText("");
+    // Show login panel
+    private void showLoginPanel() {
+        setTitle("Login");
+        mainPanel.setVisible(false);
+        loginPanel.setVisible(true);
+        addButton.setVisible(false);
+        logoutButton.setVisible(false);
+        viewAssetsButton.setVisible(false);
+        editAssetButton.setVisible(false);
+        deleteAssetButton.setVisible(false);
     }
 
-    // Authentication function
+    // Show main panel
+    private void showMainPanel() {
+        setTitle("Asset Tracking System");
+        loginPanel.setVisible(false);
+        mainPanel.setVisible(true);
+        addButton.setVisible(true);
+        logoutButton.setVisible(true);
+        viewAssetsButton.setVisible(true);
+        editAssetButton.setVisible(true);
+        deleteAssetButton.setVisible(true);
+    }
+
+    // Authenticate the user
     private void authenticate() {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
@@ -281,54 +338,42 @@ public class AssetTrackingApp extends JFrame {
         if (users.containsKey(username) && users.get(username).equals(password)) {
             loggedInDepartment = userDepartments.get(username);
             showMainPanel();
-            addButton.setVisible(true);
-            logoutButton.setVisible(true);
-            viewAssetsButton.setVisible(true);
-            JOptionPane.showMessageDialog(this, "Welcome, " + username + " from " + loggedInDepartment + " department!");
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password!");
+            JOptionPane.showMessageDialog(this, "Invalid login credentials");
         }
     }
 
-    // Show login panel
-    private void showLoginPanel() {
-        remove(mainPanel);
-        add(loginPanel, BorderLayout.CENTER);
-        revalidate();
-        repaint();
+    // Utility to clear input fields
+    private void clearFields() {
+        employeeFirstNameField.setText("");
+        employeeLastNameField.setText("");
+        employeeEmailField.setText("");
+        purchaseDateField.setText("");
+        notesField.setText("");
     }
 
-    // Show main panel (after login)
-    private void showMainPanel() {
-        remove(loginPanel);
-        add(mainPanel, BorderLayout.CENTER);
-        revalidate();
-        repaint();
-    }
-
-    // Method to get the system name automatically
+    // Retrieve the system's name
     private String getSystemName() {
-        return System.getenv("COMPUTERNAME");
-    }
-
-    // Method to get the IP address automatically
-    private String getSystemIpAddress() {
         try {
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            return inetAddress.getHostAddress();
+            return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
             return "Unknown";
         }
     }
 
-    // Main method
+    // Retrieve the system's IP address
+    private String getSystemIpAddress() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            return "Unknown";
+        }
+    }
+
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new AssetTrackingApp().setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            AssetTrackingApp app = new AssetTrackingApp();
+            app.setVisible(true);
         });
     }
 }
