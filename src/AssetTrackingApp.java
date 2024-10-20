@@ -22,6 +22,9 @@ public class AssetTrackingApp extends JFrame {
     private JPasswordField passwordField;
     private JPanel loginPanel, mainPanel;
 
+    // Buttons
+    private JButton addButton, logoutButton, viewAssetsButton;
+
     // Static department list
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology"};
 
@@ -85,8 +88,12 @@ public class AssetTrackingApp extends JFrame {
         }
 
         public String[] toArray() {
-            return new String[] {id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
+            return new String[]{id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
                     employeeFirstName, employeeLastName, employeeEmail, department};
+        }
+
+        public String getDepartment() {
+            return department;
         }
     }
 
@@ -178,11 +185,19 @@ public class AssetTrackingApp extends JFrame {
 
         // Button Panel
         JPanel buttonPanel = new JPanel();
-        JButton addButton = new JButton("Add Asset");
-        JButton logoutButton = new JButton("Logout");
+        addButton = new JButton("Add Asset");
+        logoutButton = new JButton("Logout");
+        viewAssetsButton = new JButton("View My Department's Assets");
+
         buttonPanel.add(addButton);
+        buttonPanel.add(viewAssetsButton);
         buttonPanel.add(logoutButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Initially hide the buttons until login
+        addButton.setVisible(false);
+        logoutButton.setVisible(false);
+        viewAssetsButton.setVisible(false);
 
         // Button Action Listener for adding assets
         addButton.addActionListener(new ActionListener() {
@@ -197,6 +212,14 @@ public class AssetTrackingApp extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showLoginPanel();
+            }
+        });
+
+        // Button Action Listener for viewing assets by department
+        viewAssetsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterAssetsByDepartment();
             }
         });
 
@@ -230,6 +253,16 @@ public class AssetTrackingApp extends JFrame {
         clearFields();
     }
 
+    // Filter assets by department
+    private void filterAssetsByDepartment() {
+        tableModel.setRowCount(0);  // Clear the table
+        for (Asset asset : assets) {
+            if (asset.getDepartment().equals(loggedInDepartment) || loggedInDepartment.equals("Admin")) {
+                tableModel.addRow(asset.toArray());
+            }
+        }
+    }
+
     // Function to clear input fields
     private void clearFields() {
         assetTagField.setText("");
@@ -240,7 +273,7 @@ public class AssetTrackingApp extends JFrame {
         notesField.setText("");
     }
 
-    // Method to authenticate user
+    // Authentication function
     private void authenticate() {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
@@ -248,7 +281,10 @@ public class AssetTrackingApp extends JFrame {
         if (users.containsKey(username) && users.get(username).equals(password)) {
             loggedInDepartment = userDepartments.get(username);
             showMainPanel();
-            JOptionPane.showMessageDialog(this, "Welcome, " + loggedInDepartment + " user!");
+            addButton.setVisible(true);
+            logoutButton.setVisible(true);
+            viewAssetsButton.setVisible(true);
+            JOptionPane.showMessageDialog(this, "Welcome, " + username + " from " + loggedInDepartment + " department!");
         } else {
             JOptionPane.showMessageDialog(this, "Invalid username or password!");
         }
