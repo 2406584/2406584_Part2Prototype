@@ -10,18 +10,28 @@ import java.util.UUID;
 
 public class AssetTrackingApp extends JFrame {
     // Asset Data Fields
-    private JTextField employeeFirstNameField, employeeLastNameField, employeeEmailField, systemNameField, modelField, manufacturerField, typeField, ipAddressField, purchaseDateField;
+    private JTextField employeeFirstNameField, employeeLastNameField, employeeEmailField, systemNameField, modelField, manufacturerField, typeField, ipAddressField, purchaseDateField, assetTagField;
     private JTextArea notesField;
     private JComboBox<String> departmentComboBox;
     private JTable assetTable;
     private DefaultTableModel tableModel;
 
+    // Authentication fields
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPanel loginPanel, mainPanel;
+
     // Static department list
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology"};
+
+    // Sample credentials for authentication
+    private static final String USERNAME = "admin";
+    private static final String PASSWORD = "password";
 
     // Asset class representing individual assets
     static class Asset {
         private String id;  // Unique identifier (UUID)
+        private String assetTag;
         private String systemName;
         private String model;
         private String manufacturer;
@@ -35,10 +45,11 @@ public class AssetTrackingApp extends JFrame {
         private String department;
 
         // Constructor
-        public Asset(String systemName, String model, String manufacturer, String type, String ipAddress,
+        public Asset(String assetTag, String systemName, String model, String manufacturer, String type, String ipAddress,
                      String purchaseDate, String notes, String employeeFirstName, String employeeLastName,
                      String employeeEmail, String department) {
             this.id = UUID.randomUUID().toString();  // Generate unique ID
+            this.assetTag = assetTag;
             this.systemName = systemName;
             this.model = model;
             this.manufacturer = manufacturer;
@@ -53,15 +64,9 @@ public class AssetTrackingApp extends JFrame {
         }
 
         public String[] toArray() {
-            return new String[] {id, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
+            return new String[] {id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes,
                     employeeFirstName, employeeLastName, employeeEmail, department};
         }
-
-        public String getId() {
-            return id;
-        }
-
-        // Getter and Setter methods could be added here if needed
     }
 
     private java.util.List<Asset> assets = new ArrayList<>();  // List to store all assets
@@ -73,12 +78,28 @@ public class AssetTrackingApp extends JFrame {
         setSize(1000, 600);
         setLocationRelativeTo(null);
 
-        // Main Panel
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        add(mainPanel);
+        // Authentication Panel (Login)
+        loginPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        loginPanel.setBorder(BorderFactory.createTitledBorder("Login"));
+
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+        JButton loginButton = new JButton("Login");
+
+        loginPanel.add(new JLabel("Username:"));
+        loginPanel.add(usernameField);
+        loginPanel.add(new JLabel("Password:"));
+        loginPanel.add(passwordField);
+        loginPanel.add(new JLabel(""));
+        loginPanel.add(loginButton);
+
+        add(loginPanel, BorderLayout.CENTER);
+
+        // Main Panel (After login)
+        mainPanel = new JPanel(new BorderLayout());
 
         // Form Panel (For Adding Assets)
-        JPanel formPanel = new JPanel(new GridLayout(12, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(13, 2, 10, 10));
         formPanel.setBorder(BorderFactory.createTitledBorder("Asset and Employee Information"));
 
         // Employee Data Fields
@@ -87,6 +108,7 @@ public class AssetTrackingApp extends JFrame {
         employeeEmailField = new JTextField();
 
         // Asset Data Fields (Some are auto-filled from the system)
+        assetTagField = new JTextField();
         systemNameField = new JTextField(getSystemName());
         modelField = new JTextField("Auto Model");
         manufacturerField = new JTextField("Auto Manufacturer");
@@ -107,6 +129,8 @@ public class AssetTrackingApp extends JFrame {
         formPanel.add(employeeEmailField);
         formPanel.add(new JLabel("Department:"));
         formPanel.add(departmentComboBox);
+        formPanel.add(new JLabel("Asset Tag Number:"));
+        formPanel.add(assetTagField);
         formPanel.add(new JLabel("System Name:"));
         formPanel.add(systemNameField);
         formPanel.add(new JLabel("Model:"));
@@ -125,7 +149,7 @@ public class AssetTrackingApp extends JFrame {
         mainPanel.add(formPanel, BorderLayout.NORTH);
 
         // Table for displaying asset data
-        String[] columnNames = {"ID", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Purchase Date", "Notes", "Employee First Name", "Employee Last Name", "Employee Email", "Department"};
+        String[] columnNames = {"ID", "Asset Tag", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Purchase Date", "Notes", "Employee First Name", "Employee Last Name", "Employee Email", "Department"};
         tableModel = new DefaultTableModel(columnNames, 0);
         assetTable = new JTable(tableModel);
         JScrollPane tableScrollPane = new JScrollPane(assetTable);
@@ -134,14 +158,32 @@ public class AssetTrackingApp extends JFrame {
         // Button Panel
         JPanel buttonPanel = new JPanel();
         JButton addButton = new JButton("Add Asset");
+        JButton logoutButton = new JButton("Logout");
         buttonPanel.add(addButton);
+        buttonPanel.add(logoutButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Button Action Listener
+        // Button Action Listener for adding assets
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 addAsset();
+            }
+        });
+
+        // Button Action Listener for logging out
+        logoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showLoginPanel();
+            }
+        });
+
+        // Login Action
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                authenticate();
             }
         });
     }
@@ -149,6 +191,7 @@ public class AssetTrackingApp extends JFrame {
     // Function to add asset
     private void addAsset() {
         Asset asset = new Asset(
+                assetTagField.getText(),
                 systemNameField.getText(),
                 modelField.getText(),
                 manufacturerField.getText(),
@@ -168,11 +211,40 @@ public class AssetTrackingApp extends JFrame {
 
     // Function to clear input fields
     private void clearFields() {
+        assetTagField.setText("");
         employeeFirstNameField.setText("");
         employeeLastNameField.setText("");
         employeeEmailField.setText("");
         purchaseDateField.setText("");
         notesField.setText("");
+    }
+
+    // Method to authenticate user
+    private void authenticate() {
+        String username = usernameField.getText();
+        String password = new String(passwordField.getPassword());
+
+        if (USERNAME.equals(username) && PASSWORD.equals(password)) {
+            showMainPanel();
+        } else {
+            JOptionPane.showMessageDialog(this, "Invalid username or password!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Show the main panel (after login)
+    private void showMainPanel() {
+        remove(loginPanel);
+        add(mainPanel);
+        revalidate();
+        repaint();
+    }
+
+    // Show the login panel (on logout)
+    private void showLoginPanel() {
+        remove(mainPanel);
+        add(loginPanel);
+        revalidate();
+        repaint();
     }
 
     // Method to get the system name automatically
