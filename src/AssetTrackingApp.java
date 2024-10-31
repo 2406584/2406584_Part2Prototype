@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.UUID;
+import java.sql.Statement;
 
 public class AssetTrackingApp extends JFrame {
     // User and asset management variables
@@ -26,8 +27,7 @@ public class AssetTrackingApp extends JFrame {
 
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology", "Admin"};
 
-    // SQLite database URL
-    private static final String DB_URL = "jdbc:sqlite:asset_tracking.db";
+    private static final String DATABASE_URL = "jdbc:sqlite:assets.db";
 
     public AssetTrackingApp() {
         setTitle("Asset Tracking System");
@@ -36,9 +36,10 @@ public class AssetTrackingApp extends JFrame {
         setLocationRelativeTo(null);
 
         users = new HashMap<>();
-
-        // Sample users for authentication
         initializeUsers();
+
+        // Create the database and assets table
+        createNewDatabase();
 
         // Create UI components
         loginPanel = createLoginPanel();
@@ -47,6 +48,40 @@ public class AssetTrackingApp extends JFrame {
         // Set layout and add components
         setLayout(new BorderLayout());
         add(loginPanel, BorderLayout.CENTER);
+    }
+
+    private void createNewDatabase() {
+        try (Connection conn = DriverManager.getConnection(DATABASE_URL)) {
+            if (conn != null) {
+                System.out.println("Connection to SQLite has been established.");
+
+                // Create a new table
+                String sql = "CREATE TABLE IF NOT EXISTS assets (\n"
+                        + " id TEXT PRIMARY KEY,\n"
+                        + " assetTag TEXT NOT NULL,\n"
+                        + " systemName TEXT NOT NULL,\n"
+                        + " model TEXT NOT NULL,\n"
+                        + " manufacturer TEXT NOT NULL,\n"
+                        + " type TEXT NOT NULL,\n"
+                        + " ipAddress TEXT NOT NULL,\n"
+                        + " purchaseDate TEXT NOT NULL,\n"
+                        + " notes TEXT,\n"
+                        + " employeeFirstName TEXT NOT NULL,\n"
+                        + " employeeLastName TEXT NOT NULL,\n"
+                        + " employeeEmail TEXT NOT NULL,\n"
+                        + " department TEXT NOT NULL\n"
+                        + ");";
+
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute(sql);
+                    System.out.println("Table 'assets' has been created.");
+                } catch (SQLException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private void initializeUsers() {
@@ -201,46 +236,25 @@ public class AssetTrackingApp extends JFrame {
         cl.show(cardPanel, panelName);
     }
 
-    // Method to handle login authentication
+    // Method to authenticate user
     private void authenticate() {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
 
         User user = users.get(username);
-        if (user != null && user.password.equals(password)) {
-            switchToMainPanel();
+        if (user != null && user.getPassword().equals(password)) {
+            setTitle("Welcome " + user.getFirstName() + " " + user.getLastName());
+            remove(loginPanel);
+            add(mainPanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password!", "Login Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid username or password", "Login Failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // Method to switch to main panel after successful login
-    private void switchToMainPanel() {
-        remove(loginPanel);
-        add(mainPanel);
-        revalidate();
-        repaint();
-    }
-
-    // Method to handle logout
-    private void logout() {
-        remove(mainPanel);
-        add(loginPanel);
-        revalidate();
-        repaint();
-    }
-
-    // Method to add asset
+    // Method to add asset to database
     private void addAsset() {
-        // Validate fields before adding
-        if (assetTagField.getText().isEmpty() || systemNameField.getText().isEmpty() || modelField.getText().isEmpty() || manufacturerField.getText().isEmpty() ||
-                typeField.getText().isEmpty() || ipAddressField.getText().isEmpty() || purchaseDateField.getText().isEmpty() || employeeFirstNameField.getText().isEmpty() ||
-                employeeLastNameField.getText().isEmpty() || employeeEmailField.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all fields!", "Input Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String id = UUID.randomUUID().toString();
         String assetTag = assetTagField.getText();
         String systemName = systemNameField.getText();
         String model = modelField.getText();
@@ -254,46 +268,42 @@ public class AssetTrackingApp extends JFrame {
         String employeeEmail = employeeEmailField.getText();
         String department = (String) departmentComboBox.getSelectedItem();
 
-        // Add asset to the database
-        if (insertAssetToDatabase(id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes, employeeFirstName, employeeLastName, employeeEmail, department)) {
-            // Clear input fields after addition
-            clearInputFields();
-            JOptionPane.showMessageDialog(this, "Asset added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Failed to add asset to database!", "Database Error", JOptionPane.ERROR_MESSAGE);
+        if (assetTag.isEmpty() || systemName.isEmpty() || model.isEmpty() || manufacturer.isEmpty() ||
+                type.isEmpty() || ipAddress.isEmpty() || purchaseDate.isEmpty() ||
+                employeeFirstName.isEmpty() || employeeLastName.isEmpty() || employeeEmail.isEmpty() || department == null) {
+            JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-    }
 
-    // Method to insert asset into the database
-    private boolean insertAssetToDatabase(String id, String assetTag, String systemName, String model, String manufacturer, String type,
-                                          String ipAddress, String purchaseDate, String notes, String employeeFirstName, String employeeLastName,
-                                          String employeeEmail, String department) {
-        String sql = "INSERT INTO assets(id, asset_tag, system_name, model, manufacturer, type, ip_address, purchase_date, notes, employee_first_name, employee_last_name, employee_email, department) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            pstmt.setString(2, assetTag);
-            pstmt.setString(3, systemName);
-            pstmt.setString(4, model);
-            pstmt.setString(5, manufacturer);
-            pstmt.setString(6, type);
-            pstmt.setString(7, ipAddress);
-            pstmt.setString(8, purchaseDate);
-            pstmt.setString(9, notes);
-            pstmt.setString(10, employeeFirstName);
-            pstmt.setString(11, employeeLastName);
-            pstmt.setString(12, employeeEmail);
-            pstmt.setString(13, department);
-            pstmt.executeUpdate();
-            return true; // Successfully inserted
+        String id = UUID.randomUUID().toString(); // Generate unique asset ID
+
+        try (Connection conn = DriverManager.getConnection(DATABASE_URL)) {
+            String sql = "INSERT INTO assets (id, assetTag, systemName, model, manufacturer, type, ipAddress, purchaseDate, notes, employeeFirstName, employeeLastName, employeeEmail, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, id);
+                pstmt.setString(2, assetTag);
+                pstmt.setString(3, systemName);
+                pstmt.setString(4, model);
+                pstmt.setString(5, manufacturer);
+                pstmt.setString(6, type);
+                pstmt.setString(7, ipAddress);
+                pstmt.setString(8, purchaseDate);
+                pstmt.setString(9, notes);
+                pstmt.setString(10, employeeFirstName);
+                pstmt.setString(11, employeeLastName);
+                pstmt.setString(12, employeeEmail);
+                pstmt.setString(13, department);
+                pstmt.executeUpdate();
+            }
+
+            JOptionPane.showMessageDialog(this, "Asset added successfully!");
+            clearAssetFields();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false; // Failed to insert
+            JOptionPane.showMessageDialog(this, "Error adding asset: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // Method to clear input fields
-    private void clearInputFields() {
+    private void clearAssetFields() {
         assetTagField.setText("");
         systemNameField.setText("");
         modelField.setText("");
@@ -305,7 +315,16 @@ public class AssetTrackingApp extends JFrame {
         employeeFirstNameField.setText("");
         employeeLastNameField.setText("");
         employeeEmailField.setText("");
-        departmentComboBox.setSelectedIndex(0); // Reset to first department
+        departmentComboBox.setSelectedIndex(0);
+    }
+
+    private void logout() {
+        remove(mainPanel);
+        add(loginPanel, BorderLayout.CENTER);
+        usernameField.setText("");
+        passwordField.setText("");
+        revalidate();
+        repaint();
     }
 
     public static void main(String[] args) {
@@ -314,21 +333,40 @@ public class AssetTrackingApp extends JFrame {
             app.setVisible(true);
         });
     }
+}
 
-    // User class to manage users
-    private static class User {
-        String username;
-        String password;
-        String firstName;
-        String lastName;
-        String email;
+class User {
+    private String username;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private String email;
 
-        User(String username, String password, String firstName, String lastName, String email) {
-            this.username = username;
-            this.password = password;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.email = email;
-        }
+    public User(String username, String password, String firstName, String lastName, String email) {
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getEmail() {
+        return email;
     }
 }
