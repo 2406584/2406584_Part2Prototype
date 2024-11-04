@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="2406584_Part2Prototype:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/2406584_Part2Prototype_jar</output-path>
+    <root id="archive" name="2406584_Part2Prototype_jar.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="2406584_Part2Prototype" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/sqlite-jdbc-3.47.0.0.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
