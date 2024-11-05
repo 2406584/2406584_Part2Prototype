@@ -15,7 +15,7 @@ public class AssetTrackingApp extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private final JPanel loginPanel;
-    private final JPanel mainPanel;
+    private JPanel mainPanel;
     private JPanel cardPanel;
     private JTextField assetTagField, systemNameField, modelField, manufacturerField, typeField, ipAddressField, purchaseDateField, employeeFirstNameField, employeeLastNameField, employeeEmailField;
     private JTextArea notesField;
@@ -41,15 +41,13 @@ public class AssetTrackingApp extends JFrame {
         createNewDatabase();
 
         // Create UI components
-        loginPanel = createLoginPanel();
+        loginPanel = createLoginPanel(); // Assuming createLoginPanel() returns a JPanel
+        add(loginPanel, BorderLayout.CENTER);
         mainPanel = createMainPanel();
 
         // Set layout and add components
         setLayout(new BorderLayout());
-        add(mainPanel, BorderLayout.CENTER);
-
-        // Optionally set background color of the main panel if needed
-        mainPanel.setBackground(Color.WHITE); // Set a default background color if desired
+        add(loginPanel, BorderLayout.CENTER);
 
         // Show the frame
         setVisible(true); // Make sure to make the frame visible after adding components
@@ -374,21 +372,95 @@ public class AssetTrackingApp extends JFrame {
             return;
         }
 
-        User user = users.get(username);
+        // Get the user from the map to validate credentials
+        User user = users.get(username); // Assuming 'users' is a HashMap<String, User>
 
         if (user != null && user.getPassword().equals(password)) {
-            // Switch to the main panel upon successful login
-            JPanel mainPanel = createMainPanel(); // Create main panel on successful login
-            remove(loginPanel); // Remove login panel
-            add(mainPanel, BorderLayout.CENTER); // Add main panel to the frame
+            // User credentials are valid, create the welcome panel with this user’s information
+            JPanel welcomePanel = createWelcomePanel(user);  // Pass the user object here
+            usernameField.setText(""); // Clear username field
+            passwordField.setText(""); // Clear password field
+
+            // Remove the login panel and show the welcome panel
+            remove(loginPanel);
+            add(welcomePanel, BorderLayout.CENTER);
+
             revalidate();
             repaint();
         } else {
             JOptionPane.showMessageDialog(this, "Invalid Username or Password.", "Login Error", JOptionPane.ERROR_MESSAGE);
-            passwordField.setText("");
+            passwordField.setText(""); // Clear the password field on failure
         }
     }
 
+
+    private JPanel createWelcomePanel(User user) {
+        // Create the main welcome panel with a green border and background
+        JPanel welcomePanel = new JPanel(new BorderLayout());
+        welcomePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0, 128, 0)), "Welcome"));
+        welcomePanel.setBackground(Color.WHITE); // Main background color for welcome panel
+
+        // Welcome label with user's name
+        JLabel welcomeLabel = new JLabel("Welcome, " + user.getFirstName() + " " + user.getLastName() + "! What would you like to do?");
+        welcomeLabel.setHorizontalAlignment(JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        welcomeLabel.setForeground(new Color(0, 128, 0)); // Green text color for welcome message
+        welcomePanel.add(welcomeLabel, BorderLayout.NORTH);
+
+        // Button panel setup
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(Color.WHITE); // Ensure button panel matches main panel
+
+        // Create buttons with consistent styling
+        // JButton viewAssetsButton = new JButton("View Assets");
+        JButton addAssetButton = new JButton("Add Asset");
+        // JButton deleteAssetButton = new JButton("Delete Asset");
+        // JButton editAssetButton = new JButton("Edit Asset");
+        JButton logoutButton = new JButton("Logout");
+
+        // Style and configure each button
+        // styleButton(viewAssetsButton);
+        styleButton(addAssetButton);
+        // styleButton(deleteAssetButton);
+        // styleButton(editAssetButton);
+        styleButton(logoutButton);
+
+        // Add action listeners to navigate to different panels
+       // viewAssetsButton.addActionListener(e -> showMainPanel("View"));
+        addAssetButton.addActionListener(e -> showMainPanel("Add"));
+        // deleteAssetButton.addActionListener(e -> showMainPanel("Delete"));
+        // editAssetButton.addActionListener(e -> showMainPanel("Edit"));
+        logoutButton.addActionListener(e -> logout());
+
+        // Add buttons to the button panel
+        // buttonPanel.add(viewAssetsButton);
+        buttonPanel.add(addAssetButton);
+        // buttonPanel.add(deleteAssetButton);
+        // buttonPanel.add(editAssetButton);
+        buttonPanel.add(logoutButton);
+
+        // Add button panel to the main welcome panel
+        welcomePanel.add(buttonPanel, BorderLayout.CENTER);
+
+        return welcomePanel;
+    }
+
+    private void showMainPanel(String panelName) {
+        if (mainPanel == null) {
+            mainPanel = createMainPanel(); // Initialize mainPanel if null
+        }
+
+        // Remove any existing panel from the frame and add mainPanel
+        getContentPane().removeAll();
+        add(mainPanel, BorderLayout.CENTER);
+
+        // Display the specified panel within mainPanel using CardLayout
+        CardLayout cardLayout = (CardLayout) cardPanel.getLayout();
+        cardLayout.show(cardPanel, panelName);
+
+        revalidate();
+        repaint();
+    }
 
     // Method to add asset to database
     private void addAsset() {
@@ -633,9 +705,9 @@ public class AssetTrackingApp extends JFrame {
 
     private void logout() {
         remove(mainPanel);
+        mainPanel = null;  // Reset mainPanel to ensure a clean state for future sessions
         add(loginPanel, BorderLayout.CENTER);
-        usernameField.setText("");
-        passwordField.setText("");
+        setTitle("Asset Tracking System - Login");
         revalidate();
         repaint();
     }
