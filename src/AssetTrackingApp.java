@@ -24,14 +24,15 @@ public class AssetTrackingApp extends JFrame {
 
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology", "Admin"};
 
+    // Database
     private static final String DATABASE_URL = "jdbc:sqlite:assets.db";
 
     public AssetTrackingApp() {
         // Set up the main frame
         setTitle("Asset Tracking System");
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Set the frame to be maximized
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window on the screen
+        setLocationRelativeTo(null);
 
         // Initialize the user map and other variables
         users = new HashMap<>();
@@ -41,7 +42,7 @@ public class AssetTrackingApp extends JFrame {
         createNewDatabase();
 
         // Create UI components
-        loginPanel = createLoginPanel(); // Assuming createLoginPanel() returns a JPanel
+        loginPanel = createLoginPanel();
         add(loginPanel, BorderLayout.CENTER);
         mainPanel = createMainPanel();
 
@@ -58,7 +59,6 @@ public class AssetTrackingApp extends JFrame {
             if (conn != null) {
                 System.out.println("Connection to SQLite has been established.");
 
-                // Create a new table
                 String sql = new StringBuilder().append("CREATE TABLE IF NOT EXISTS assets (\n").append(" id TEXT PRIMARY KEY,\n").append(" assetTag TEXT NOT NULL,\n").append(" systemName TEXT NOT NULL,\n").append(" model TEXT NOT NULL,\n").append(" manufacturer TEXT NOT NULL,\n").append(" type TEXT NOT NULL,\n").append(" ipAddress TEXT NOT NULL,\n").append(" purchaseDate TEXT NOT NULL,\n").append(" notes TEXT,\n").append(" employeeFirstName TEXT NOT NULL,\n").append(" employeeLastName TEXT NOT NULL,\n").append(" employeeEmail TEXT NOT NULL,\n").append(" department TEXT NOT NULL\n").append(");").toString();
 
                 try (Statement stmt = conn.createStatement()) {
@@ -72,7 +72,7 @@ public class AssetTrackingApp extends JFrame {
             System.out.println(e.getMessage());
         }
     }
-
+    // Method to specify users
     private void initializeUsers() {
         users.put("admin", new User("admin", "adminPass", "Admin", "User", "admin@scottishglen.com", "Admin"));
         users.put("finance_user", new User("finance_user", "financePass", "Finance", "User", "finance.user@scottishglen.com", "Finance"));
@@ -88,14 +88,11 @@ public class AssetTrackingApp extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Asset Management"));
 
-        // Set the background color of the main panel to white
         panel.setBackground(Color.WHITE);
 
-        // Add Logo at the Top
         JLabel logoLabel = new JLabel(new ImageIcon("resources/Logo.png"));
         panel.add(logoLabel, BorderLayout.NORTH); // Place logo at the top
 
-        // Create Button Panel with FlowLayout
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Centered layout with spacing
         JButton addButton = new JButton("Add Asset");
         // JButton editButton = new JButton("Edit Asset");
@@ -103,21 +100,18 @@ public class AssetTrackingApp extends JFrame {
         // JButton viewButton = new JButton("View Assets");
         JButton logoutButton = new JButton("Logout");
 
-        // Action Listeners for Buttons
         addButton.addActionListener(e -> switchToPanel("Add"));
         // editButton.addActionListener(e -> switchToPanel("Edit"));
         // deleteButton.addActionListener(e -> switchToPanel("Delete"));
         // viewButton.addActionListener(e -> switchToPanel("View"));
         logoutButton.addActionListener(e -> logout());
 
-        // Styling Buttons
         styleButton(addButton);
         // styleButton(editButton);
         // styleButton(deleteButton);
         // styleButton(viewButton);
         styleButton(logoutButton);
 
-        // Set a fixed size for buttons (adjust the width and height as necessary)
         Dimension buttonSize = new Dimension(125, 50); // Adjusted dimensions for usability
         addButton.setPreferredSize(buttonSize);
         // editButton.setPreferredSize(buttonSize);
@@ -125,27 +119,22 @@ public class AssetTrackingApp extends JFrame {
         // viewButton.setPreferredSize(buttonSize);
         logoutButton.setPreferredSize(buttonSize);
 
-        // Add Buttons to the Button Panel
         buttonPanel.add(addButton);
         // buttonPanel.add(editButton);
         // buttonPanel.add(deleteButton);
         // buttonPanel.add(viewButton);
         buttonPanel.add(logoutButton);
 
-        // Add the button panel to the main panel
         panel.add(buttonPanel, BorderLayout.CENTER); // Place button panel in the center
 
-        // Main content panel (card layout)
         cardPanel = new JPanel(new CardLayout());
         cardPanel.add(createAddAssetPanel(), "Add");
         // cardPanel.add(createEditAssetPanel(), "Edit");
         // cardPanel.add(createDeleteAssetPanel(), "Delete");
         // cardPanel.add(createViewAssetPanel(), "View");
 
-        // Add the card panel below the buttons with stretching capability
         panel.add(cardPanel, BorderLayout.SOUTH); // Place card panel at the bottom
 
-        // Set the frame to fullscreen
         setFullScreen();
 
         return panel;
@@ -168,21 +157,17 @@ public class AssetTrackingApp extends JFrame {
         JPanel loginPanel = new JPanel(new GridBagLayout());
         loginPanel.setBorder(BorderFactory.createTitledBorder("Login"));
 
-        // Initialize the username and password fields and assign them to the instance variables
-        usernameField = new JTextField(15);  // Assign to the instance variable
-        passwordField = new JPasswordField(15);  // Assign to the instance variable
+        usernameField = new JTextField(15);
+        passwordField = new JPasswordField(15);
 
-        // Label and field for username
         JLabel usernameLabel = new JLabel("Username:");
         loginPanel.add(usernameLabel, createConstraints(0, 0));
         loginPanel.add(usernameField, createConstraints(1, 0));
 
-        // Label and field for password
         JLabel passwordLabel = new JLabel("Password:");
         loginPanel.add(passwordLabel, createConstraints(0, 1));
         loginPanel.add(passwordField, createConstraints(1, 1));
 
-        // Login button with action
         JButton loginButton = new JButton("Login");
         loginButton.setBackground(new Color(0, 128, 0)); // Green background
         loginButton.setForeground(Color.WHITE); // White text color
@@ -220,11 +205,11 @@ public class AssetTrackingApp extends JFrame {
     }
 
     private void styleButton(JButton button) {
-        button.setFont(new Font("Arial", Font.BOLD, 14)); // Set font and size
-        button.setBackground(new Color(0, 128, 0));    // Set background color (steel blue)
-        button.setForeground(Color.WHITE);                // Set text color
-        button.setFocusPainted(false);                    // Remove focus outline
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15)); // Add padding
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setBackground(new Color(0, 128, 0));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
     }
 
     // Method to create Add Asset panel
@@ -236,7 +221,6 @@ public class AssetTrackingApp extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Employee Information Panel
         JPanel employeeInfoPanel = new JPanel(new GridLayout(4, 2, 5, 5));
         employeeInfoPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Employee Information"));
 
@@ -255,7 +239,6 @@ public class AssetTrackingApp extends JFrame {
         employeeInfoPanel.add(new JLabel("Department:"));
         employeeInfoPanel.add(departmentComboBox);
 
-        // Asset Information Panel with more spacing
         JPanel assetInfoPanel = new JPanel(new GridBagLayout());
         assetInfoPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Asset Information"));
 
@@ -264,7 +247,7 @@ public class AssetTrackingApp extends JFrame {
         assetGbc.anchor = GridBagConstraints.WEST;
         assetGbc.fill = GridBagConstraints.HORIZONTAL;
         assetGbc.gridx = 0;
-        assetGbc.gridy = GridBagConstraints.RELATIVE; // Allow auto-increment of rows
+        assetGbc.gridy = GridBagConstraints.RELATIVE;
 
         assetTagField = new JTextField();
         systemNameField = new JTextField(getSystemProperty("os.name"));
@@ -277,7 +260,6 @@ public class AssetTrackingApp extends JFrame {
         notesField.setLineWrap(true);
         notesField.setWrapStyleWord(true);
 
-        // Add each field with label and component in its own row
         assetInfoPanel.add(new JLabel("Asset Tag:"), assetGbc);
         assetInfoPanel.add(assetTagField, assetGbc);
 
@@ -304,7 +286,6 @@ public class AssetTrackingApp extends JFrame {
         notesScrollPane.setPreferredSize(new Dimension(200, 60));
         assetInfoPanel.add(notesScrollPane, assetGbc);
 
-        // Add Employee and Asset Panels Side by Side
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.5;
@@ -315,20 +296,19 @@ public class AssetTrackingApp extends JFrame {
         gbc.gridy = 0;
         addAssetPanel.add(assetInfoPanel, gbc);
 
-        // Add Asset Button with smaller size
-        JButton addAssetButton = new JButton("Add Asset");
-        addAssetButton.setPreferredSize(new Dimension(100, 30));  // Set smaller size
-        addAssetButton.setBackground(new Color(0, 128, 0)); // Set background to green
-        addAssetButton.setForeground(Color.WHITE); // Optional: Set text color to white
-        addAssetButton.addActionListener(e -> addAsset());
 
-        // Position the Add Asset Button below the panels
+//        JButton addAssetButton = new JButton("Add Asset");
+//        addAssetButton.setPreferredSize(new Dimension(100, 30));  // Set smaller size
+//        addAssetButton.setBackground(new Color(0, 128, 0)); // Set background to green
+//        addAssetButton.setForeground(Color.WHITE); // Optional: Set text color to white
+//        addAssetButton.addActionListener(e -> addAsset());
+
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
-        addAssetPanel.add(addAssetButton, gbc);
+        // addAssetPanel.add(addAssetButton, gbc);
 
         return addAssetPanel;
     }
@@ -340,7 +320,7 @@ public class AssetTrackingApp extends JFrame {
                 return InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {
                 e.printStackTrace();
-                return unknown;  // Return "Unknown" if hostname cannot be determined
+                return unknown;
             }
         }
         return System.getProperty(property, unknown);
@@ -372,16 +352,15 @@ public class AssetTrackingApp extends JFrame {
             return;
         }
 
-        // Get the user from the map to validate credentials
-        User user = users.get(username); // Assuming 'users' is a HashMap<String, User>
+
+        User user = users.get(username);
 
         if (user != null && user.getPassword().equals(password)) {
-            // User credentials are valid, create the welcome panel with this user’s information
-            JPanel welcomePanel = createWelcomePanel(user);  // Pass the user object here
-            usernameField.setText(""); // Clear username field
-            passwordField.setText(""); // Clear password field
 
-            // Remove the login panel and show the welcome panel
+            JPanel welcomePanel = createWelcomePanel(user);
+            usernameField.setText("");
+            passwordField.setText("");
+
             remove(loginPanel);
             add(welcomePanel, BorderLayout.CENTER);
 
@@ -389,27 +368,25 @@ public class AssetTrackingApp extends JFrame {
             repaint();
         } else {
             JOptionPane.showMessageDialog(this, "Invalid Username or Password.", "Login Error", JOptionPane.ERROR_MESSAGE);
-            passwordField.setText(""); // Clear the password field on failure
+            passwordField.setText("");
         }
     }
 
-
     private JPanel createWelcomePanel(User user) {
-        // Create the main welcome panel with a green border and background
+
         JPanel welcomePanel = new JPanel(new BorderLayout());
         welcomePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0, 128, 0)), "Welcome"));
         welcomePanel.setBackground(Color.WHITE); // Main background color for welcome panel
 
-        // Welcome label with user's name
         JLabel welcomeLabel = new JLabel("Welcome, " + user.getFirstName() + " " + user.getLastName() + "! What would you like to do?");
         welcomeLabel.setHorizontalAlignment(JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
         welcomeLabel.setForeground(new Color(0, 128, 0)); // Green text color for welcome message
         welcomePanel.add(welcomeLabel, BorderLayout.NORTH);
 
-        // Button panel setup
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        buttonPanel.setBackground(Color.WHITE); // Ensure button panel matches main panel
+        buttonPanel.setBackground(Color.WHITE);
 
         // Create buttons with consistent styling
         // JButton viewAssetsButton = new JButton("View Assets");
@@ -425,21 +402,19 @@ public class AssetTrackingApp extends JFrame {
         // styleButton(editAssetButton);
         styleButton(logoutButton);
 
-        // Add action listeners to navigate to different panels
-       // viewAssetsButton.addActionListener(e -> showMainPanel("View"));
+
+        // viewAssetsButton.addActionListener(e -> showMainPanel("View"));
         addAssetButton.addActionListener(e -> showMainPanel("Add"));
         // deleteAssetButton.addActionListener(e -> showMainPanel("Delete"));
         // editAssetButton.addActionListener(e -> showMainPanel("Edit"));
         logoutButton.addActionListener(e -> logout());
 
-        // Add buttons to the button panel
         // buttonPanel.add(viewAssetsButton);
         buttonPanel.add(addAssetButton);
         // buttonPanel.add(deleteAssetButton);
         // buttonPanel.add(editAssetButton);
         buttonPanel.add(logoutButton);
 
-        // Add button panel to the main welcome panel
         welcomePanel.add(buttonPanel, BorderLayout.CENTER);
 
         return welcomePanel;
@@ -450,11 +425,9 @@ public class AssetTrackingApp extends JFrame {
             mainPanel = createMainPanel(); // Initialize mainPanel if null
         }
 
-        // Remove any existing panel from the frame and add mainPanel
         getContentPane().removeAll();
         add(mainPanel, BorderLayout.CENTER);
 
-        // Display the specified panel within mainPanel using CardLayout
         CardLayout cardLayout = (CardLayout) cardPanel.getLayout();
         cardLayout.show(cardPanel, panelName);
 
@@ -477,7 +450,6 @@ public class AssetTrackingApp extends JFrame {
         String employeeEmail = employeeEmailField.getText();
         String department = (String) departmentComboBox.getSelectedItem();
 
-        // Validation
         if (assetTag.isEmpty() || systemName.isEmpty() || model.isEmpty() || manufacturer.isEmpty() ||
                 type == null || ipAddress.isEmpty() || purchaseDate.isEmpty() ||
                 employeeFirstName.isEmpty() || employeeLastName.isEmpty() || employeeEmail.isEmpty() || department == null) {
@@ -504,9 +476,6 @@ public class AssetTrackingApp extends JFrame {
                 pstmt.setString(12, employeeEmail);
                 pstmt.setString(13, department);
 
-                // Debugging: Print the values being inserted
-                System.out.println("Inserting asset: " + id + ", " + assetTag + ", " + systemName + ", " + model + ", " + manufacturer + ", " + type + ", " + ipAddress + ", " + purchaseDate + ", " + notes + ", " + employeeFirstName + ", " + employeeLastName + ", " + employeeEmail + ", " + department);
-
                 pstmt.executeUpdate();
                 JOptionPane.showMessageDialog(this, "Asset added successfully!");
                 clearAssetFields();
@@ -515,6 +484,67 @@ public class AssetTrackingApp extends JFrame {
             e.printStackTrace(); // Print stack trace for debugging
             JOptionPane.showMessageDialog(this, "Failed to add asset: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+    private void clearAssetFields() {
+        assetTagField.setText("");
+        systemNameField.setText("");
+        modelField.setText("");
+        manufacturerField.setText("");
+        typeComboBox.setSelectedIndex(0);
+        ipAddressField.setText("");
+        purchaseDateField.setText("");
+        notesField.setText("");
+        employeeFirstNameField.setText("");
+        employeeLastNameField.setText("");
+        employeeEmailField.setText("");
+        departmentComboBox.setSelectedIndex(0);
+    }
+
+    private void logout() {
+        remove(mainPanel);
+        mainPanel = null;
+        add(loginPanel, BorderLayout.CENTER);
+        setTitle("Asset Tracking System - Login");
+        revalidate();
+        repaint();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            AssetTrackingApp app = new AssetTrackingApp();
+            app.setVisible(true);
+        });
+    }
+}
+
+class User {
+    private final String username;
+    private final String password;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    private final String department;
+
+    public User(String username, String password, String firstName, String lastName, String email, String department) {
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.department = department;
+    }
+
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
     }
 
     // Method to create View Assets Panel
@@ -685,72 +715,4 @@ public class AssetTrackingApp extends JFrame {
 //            return false; // Return false in case of an error
 //        }
 //    }
-
-
-
-    private void clearAssetFields() {
-        assetTagField.setText("");
-        systemNameField.setText("");
-        modelField.setText("");
-        manufacturerField.setText("");
-        typeComboBox.setSelectedIndex(0); // Reset dropdown to first item
-        ipAddressField.setText("");
-        purchaseDateField.setText("");
-        notesField.setText("");
-        employeeFirstNameField.setText("");
-        employeeLastNameField.setText("");
-        employeeEmailField.setText("");
-        departmentComboBox.setSelectedIndex(0);
-    }
-
-    private void logout() {
-        remove(mainPanel);
-        mainPanel = null;  // Reset mainPanel to ensure a clean state for future sessions
-        add(loginPanel, BorderLayout.CENTER);
-        setTitle("Asset Tracking System - Login");
-        revalidate();
-        repaint();
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            AssetTrackingApp app = new AssetTrackingApp();
-            app.setVisible(true);
-        });
-    }
-}
-
-class User {
-    private final String username;
-    private final String password;
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final String department;
-
-    public User(String username, String password, String firstName, String lastName, String email, String department) {
-        this.username = username;
-        this.password = password;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.department = department;
-    }
-
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-
-
-
 }
