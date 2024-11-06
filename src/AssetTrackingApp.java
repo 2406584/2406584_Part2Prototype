@@ -297,18 +297,18 @@ public class AssetTrackingApp extends JFrame {
         addAssetPanel.add(assetInfoPanel, gbc);
 
 
-//        JButton addAssetButton = new JButton("Add Asset");
-//        addAssetButton.setPreferredSize(new Dimension(100, 30));  // Set smaller size
-//        addAssetButton.setBackground(new Color(0, 128, 0)); // Set background to green
-//        addAssetButton.setForeground(Color.WHITE); // Optional: Set text color to white
-//        addAssetButton.addActionListener(e -> addAsset());
+        JButton addAssetButton = new JButton("Add Asset");
+        addAssetButton.setPreferredSize(new Dimension(100, 30));  // Set smaller size
+        addAssetButton.setBackground(new Color(0, 128, 0)); // Set background to green
+        addAssetButton.setForeground(Color.WHITE); // Optional: Set text color to white
+        addAssetButton.addActionListener(e -> addAsset());
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
-        // addAssetPanel.add(addAssetButton, gbc);
+        addAssetPanel.add(addAssetButton, gbc);
 
         return addAssetPanel;
     }
