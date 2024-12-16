@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
 import java.util.HashMap;
@@ -7,25 +8,39 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class AssetTrackingApp extends JFrame {
+    public static final String DATABASE_URL = "jdbc:sqlite:assets.db";
     // User and asset management variables
     public HashMap<String, User> users;
     private static final String[] ASSET_TYPES = {"Desktop", "Laptop", "Tablet", "Mobile Phone", "Other (please specify in notes)"};
+    public static User currentUser; // The logged-in user
 
     // UI components
-    private JTextField usernameField;
-    private JPasswordField passwordField;
-    private final JPanel loginPanel;
-    private JPanel mainPanel;
-    private JPanel cardPanel;
-    private JTextField assetTagField, systemNameField, modelField, manufacturerField, typeField, ipAddressField, purchaseDateField, employeeFirstNameField, employeeLastNameField, employeeEmailField;
-    private JTextArea notesField;
-    private JComboBox<String> departmentComboBox, typeComboBox;
+    public JTextField usernameField;
+    public JPasswordField passwordField;
+    public final JPanel loginPanel;
+    public JPanel mainPanel;
+    public JPanel cardPanel;
+    public static JTextField assetTagField;
+    public static JTextField systemNameField;
+    public static JTextField modelField;
+    public static JTextField manufacturerField;
+    public static JTextField typeField;
+    public static JTextField ipAddressField;
+    public static JTextField purchaseDateField;
+    public static JTextField employeeFirstNameField;
+    public static JTextField employeeLastNameField;
+    public static JTextField employeeEmailField;
+    public static JTextArea notesField;
+    public static JComboBox<String> departmentComboBox;
+    public JComboBox<String> typeComboBox;
+    public DefaultTableModel tableModel;
+    public JTable assetTable;
+
 
 
     private static final String[] DEPARTMENTS = {"Finance", "Human Resources", "Operations", "Sales", "Information Technology", "Admin"};
 
     // Database
-    private static final String DATABASE_URL = "jdbc:sqlite:assets.db";
 
     public AssetTrackingApp() {
         // Set up the main frame
@@ -74,12 +89,22 @@ public class AssetTrackingApp extends JFrame {
     }
     // Method to specify users
     private void initializeUsers() {
+        // Initialize users and store them in the 'users' map
         users.put("admin", new User("admin", "adminPass", "Admin", "User", "admin@scottishglen.com", "Admin"));
         users.put("finance_user", new User("finance_user", "financePass", "Finance", "User", "finance.user@scottishglen.com", "Finance"));
         users.put("hr_user", new User("hr_user", "hrPass", "HR", "User", "hr.user@scottishglen.com", "Human Resources"));
         users.put("operations_user", new User("operations_user", "operationsPass", "Operations", "User", "operations.user@scottishglen.com", "Operations"));
         users.put("sales_user", new User("sales_user", "salesPass", "Sales", "User", "sales.user@scottishglen.com", "Sales"));
         users.put("it_user", new User("it_user", "itPass", "IT", "User", "it.user@scottishglen.com", "Information Technology"));
+
+        // Check if the current user exists and is logged in
+        if (currentUser != null && users.containsKey(currentUser.getUsername())) {
+            // If currentUser exists in the map, proceed with the current user
+            System.out.println("Logged in as: " + currentUser.getUsername());
+        } else {
+            // Handle the case where the user is not logged in
+            System.out.println("No user logged in or invalid user.");
+        }
     }
 
 
@@ -87,7 +112,6 @@ public class AssetTrackingApp extends JFrame {
     private JPanel createMainPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Asset Management"));
-
         panel.setBackground(Color.WHITE);
 
         JLabel logoLabel = new JLabel(new ImageIcon("resources/Logo.png"));
@@ -95,43 +119,75 @@ public class AssetTrackingApp extends JFrame {
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Centered layout with spacing
         JButton addButton = new JButton("Add Asset");
-        // JButton editButton = new JButton("Edit Asset");
-        // JButton deleteButton = new JButton("Delete Asset");
-        // JButton viewButton = new JButton("View Assets");
+        JButton editButton = new JButton("Edit Asset");
+        JButton viewButton = new JButton("View Assets");
         JButton logoutButton = new JButton("Logout");
 
         addButton.addActionListener(e -> switchToPanel("Add"));
-        // editButton.addActionListener(e -> switchToPanel("Edit"));
-        // deleteButton.addActionListener(e -> switchToPanel("Delete"));
-        // viewButton.addActionListener(e -> switchToPanel("View"));
+        editButton.addActionListener(e -> switchToPanel("Edit"));
+        viewButton.addActionListener(e -> switchToPanel("View"));
         logoutButton.addActionListener(e -> logout());
 
         styleButton(addButton);
-        // styleButton(editButton);
-        // styleButton(deleteButton);
-        // styleButton(viewButton);
+        styleButton(editButton);
+        styleButton(viewButton);
         styleButton(logoutButton);
 
         Dimension buttonSize = new Dimension(125, 50); // Adjusted dimensions for usability
         addButton.setPreferredSize(buttonSize);
-        // editButton.setPreferredSize(buttonSize);
-        // deleteButton.setPreferredSize(buttonSize);
-        // viewButton.setPreferredSize(buttonSize);
+        editButton.setPreferredSize(buttonSize);
+        viewButton.setPreferredSize(buttonSize);
         logoutButton.setPreferredSize(buttonSize);
 
         buttonPanel.add(addButton);
-        // buttonPanel.add(editButton);
-        // buttonPanel.add(deleteButton);
-        // buttonPanel.add(viewButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(viewButton);
         buttonPanel.add(logoutButton);
 
         panel.add(buttonPanel, BorderLayout.CENTER); // Place button panel in the center
 
         cardPanel = new JPanel(new CardLayout());
         cardPanel.add(createAddAssetPanel(), "Add");
-        // cardPanel.add(createEditAssetPanel(), "Edit");
-        // cardPanel.add(createDeleteAssetPanel(), "Delete");
-        // cardPanel.add(createViewAssetPanel(), "View");
+
+        // Debugging: Check if currentUser is null or not
+        System.out.println("currentUser is null: " + (currentUser == null));
+
+        if (currentUser != null) {
+            // Debugging: Check if panels are initialized correctly
+            System.out.println("Adding EditAssetPanel: " + (currentUser.createEditAssetPanel() != null));
+            System.out.println("Adding ViewAssetPanel: " + (currentUser.createViewAssetPanel() != null));
+
+            JPanel editPanel = (JPanel) currentUser.createEditAssetPanel();
+            JPanel viewPanel = (JPanel) currentUser.createViewAssetPanel();
+
+            // Add the panels only if they are not null
+            if (editPanel != null) {
+                cardPanel.add(editPanel, "Edit");
+            } else {
+                // Add a default panel or message
+                JPanel defaultEditPanel = new JPanel();
+                defaultEditPanel.add(new JLabel("Please log in to edit assets."));
+                cardPanel.add(defaultEditPanel, "Edit");
+            }
+
+            if (viewPanel != null) {
+                cardPanel.add(viewPanel, "View");
+            } else {
+                // Add a default panel or message
+                JPanel defaultViewPanel = new JPanel();
+                defaultViewPanel.add(new JLabel("Please log in to view assets."));
+                cardPanel.add(defaultViewPanel, "View");
+            }
+        } else {
+            // Handle null user, maybe show a login prompt or default message
+            JPanel defaultPanel = new JPanel();
+            defaultPanel.add(new JLabel("Please log in to access asset management features."));
+            cardPanel.add(defaultPanel, "Edit");
+            cardPanel.add(defaultPanel, "View");
+        }
+
+        // Ensure cardPanel is not null before adding to the main panel
+        System.out.println("cardPanel is null: " + (cardPanel == null));
 
         panel.add(cardPanel, BorderLayout.SOUTH); // Place card panel at the bottom
 
@@ -139,6 +195,11 @@ public class AssetTrackingApp extends JFrame {
 
         return panel;
     }
+
+
+
+
+
 
     // Method to set the application to fullscreen
     private void setFullScreen() {
@@ -342,35 +403,55 @@ public class AssetTrackingApp extends JFrame {
         cl.show(cardPanel, panelName);
     }
 
-    // Method to authenticate user
     private void authenticate() {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword()).trim();
 
+        // Check if username or password is empty
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Username and Password cannot be empty.", "Login Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-
+        // Retrieve the user object from the user map
         User user = users.get(username);
 
-        if (user != null && user.getPassword().equals(password)) {
+        if (user != null) {
+            if (user.getPassword().equals(password)) {
+                // Set the currentUser to the authenticated user
+                currentUser = user;
 
-            JPanel welcomePanel = createWelcomePanel(user);
-            usernameField.setText("");
-            passwordField.setText("");
+                // Create the main panel for the logged-in user
+                JPanel mainPanel = createMainPanel();
 
-            remove(loginPanel);
-            add(welcomePanel, BorderLayout.CENTER);
+                // Clear login fields
+                usernameField.setText("");
+                passwordField.setText("");
 
-            revalidate();
-            repaint();
+                // Remove the login panel and add the main panel
+                if (loginPanel != null) {
+                    remove(loginPanel);  // Make sure loginPanel is not null
+                }
+                add(mainPanel, BorderLayout.CENTER);
+
+                // Refresh the UI to reflect the updated panel
+                revalidate();
+                repaint();
+            } else {
+                // Handle incorrect password
+                JOptionPane.showMessageDialog(this, "Incorrect password. Please try again.", "Login Error", JOptionPane.ERROR_MESSAGE);
+                passwordField.setText(""); // Clear the password field
+            }
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid Username or Password.", "Login Error", JOptionPane.ERROR_MESSAGE);
-            passwordField.setText("");
+            // Handle non-existent username
+            JOptionPane.showMessageDialog(this, "Username not found. Please try again.", "Login Error", JOptionPane.ERROR_MESSAGE);
+            usernameField.setText(""); // Optionally clear username field
+            passwordField.setText(""); // Clear password field
         }
     }
+
+
+
 
     private JPanel createWelcomePanel(User user) {
 
@@ -389,30 +470,30 @@ public class AssetTrackingApp extends JFrame {
         buttonPanel.setBackground(Color.WHITE);
 
         // Create buttons with consistent styling
-        // JButton viewAssetsButton = new JButton("View Assets");
+        JButton viewAssetsButton = new JButton("View Assets");
         JButton addAssetButton = new JButton("Add Asset");
         // JButton deleteAssetButton = new JButton("Delete Asset");
-        // JButton editAssetButton = new JButton("Edit Asset");
+        JButton editAssetButton = new JButton("Edit Asset");
         JButton logoutButton = new JButton("Logout");
 
         // Style and configure each button
-        // styleButton(viewAssetsButton);
+        styleButton(viewAssetsButton);
         styleButton(addAssetButton);
         // styleButton(deleteAssetButton);
-        // styleButton(editAssetButton);
+        styleButton(editAssetButton);
         styleButton(logoutButton);
 
 
-        // viewAssetsButton.addActionListener(e -> showMainPanel("View"));
+        viewAssetsButton.addActionListener(e -> showMainPanel("View"));
         addAssetButton.addActionListener(e -> showMainPanel("Add"));
         // deleteAssetButton.addActionListener(e -> showMainPanel("Delete"));
-        // editAssetButton.addActionListener(e -> showMainPanel("Edit"));
+        editAssetButton.addActionListener(e -> showMainPanel("Edit"));
         logoutButton.addActionListener(e -> logout());
 
-        // buttonPanel.add(viewAssetsButton);
+        buttonPanel.add(viewAssetsButton);
         buttonPanel.add(addAssetButton);
         // buttonPanel.add(deleteAssetButton);
-        // buttonPanel.add(editAssetButton);
+        buttonPanel.add(editAssetButton);
         buttonPanel.add(logoutButton);
 
         welcomePanel.add(buttonPanel, BorderLayout.CENTER);
@@ -485,7 +566,7 @@ public class AssetTrackingApp extends JFrame {
             JOptionPane.showMessageDialog(this, "Failed to add asset: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    private void clearAssetFields() {
+    public void clearAssetFields() {
         assetTagField.setText("");
         systemNameField.setText("");
         modelField.setText("");
@@ -501,13 +582,29 @@ public class AssetTrackingApp extends JFrame {
     }
 
     private void logout() {
-        remove(mainPanel);
-        mainPanel = null;
-        add(loginPanel, BorderLayout.CENTER);
-        setTitle("Asset Tracking System - Login");
-        revalidate();
-        repaint();
+        System.out.println("Logging out...");
+        System.out.println("cardPanel is null: " + (cardPanel == null));
+
+        if (cardPanel != null) {
+            System.out.println("Removing all components from cardPanel.");
+            cardPanel.removeAll();  // Attempt to remove all components
+
+            // After removing, you might want to reset or replace the panel with a login form
+            JPanel loginPanel = createLoginPanel();
+            cardPanel.add(loginPanel, "Login");
+
+            cardPanel.revalidate();  // Ensure the layout is updated
+            cardPanel.repaint();  // Redraw the component
+
+            System.out.println("cardPanel after reset: " + cardPanel);
+        } else {
+            System.out.println("cardPanel is null, skipping logout.");
+        }
+
+        // Log out user and reset state
+        currentUser = null;
     }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -515,6 +612,187 @@ public class AssetTrackingApp extends JFrame {
             app.setVisible(true);
         });
     }
+
+    // Method to create Edit Asset panel
+    public JPanel createEditAssetPanel() {
+        if (AssetTrackingApp.currentUser == null) {
+            System.out.println("No user logged in.");
+            // Optionally, redirect to a login screen or show an error dialog
+            return new JPanel(); // Return an empty panel or appropriate message
+        }
+
+
+    // Method to edit an asset in the database
+        // Create the edit panel
+        JPanel editPanel = new JPanel(new BorderLayout());
+
+        // Create a table to display assets
+        String[] columnNames = {"Asset Tag", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Department"};
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        JTable assetTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(assetTable);
+        editPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Populate the table with assets
+        try (Connection conn = DriverManager.getConnection(AssetTrackingApp.DATABASE_URL)) {
+            String sql = "SELECT assetTag, systemName, model, manufacturer, type, ipAddress, department FROM assets";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                    tableModel.addRow(new Object[]{
+                            rs.getString("assetTag"),
+                            rs.getString("systemName"),
+                            rs.getString("model"),
+                            rs.getString("manufacturer"),
+                            rs.getString("type"),
+                            rs.getString("ipAddress"),
+                            rs.getString("department")
+                    });
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(editPanel, "Error loading assets: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        // Add an "Edit" button
+        JButton editAssetButton = new JButton("Edit Selected Asset");
+        editAssetButton.addActionListener(e -> {
+            int selectedRow = assetTable.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(editPanel, "Please select an asset to edit.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Get the selected asset's details
+            String assetTag = (String) tableModel.getValueAt(selectedRow, 0);
+
+            // Open a dialog for editing the asset
+            JDialog editDialog = new JDialog((Frame) null, "Edit Asset", true);
+            editDialog.setLayout(new GridLayout(0, 2));
+
+            JTextField systemNameField = new JTextField((String) tableModel.getValueAt(selectedRow, 1));
+            JTextField modelField = new JTextField((String) tableModel.getValueAt(selectedRow, 2));
+            JTextField manufacturerField = new JTextField((String) tableModel.getValueAt(selectedRow, 3));
+            JTextField typeField = new JTextField((String) tableModel.getValueAt(selectedRow, 4));
+            JTextField ipAddressField = new JTextField((String) tableModel.getValueAt(selectedRow, 5));
+            JComboBox<String> departmentComboBox = new JComboBox<>(new String[]{"HR", "IT", "Finance", "Operations"}); // Example departments
+            departmentComboBox.setSelectedItem(tableModel.getValueAt(selectedRow, 6));
+
+            // Add fields to dialog
+            editDialog.add(new JLabel("System Name:"));
+            editDialog.add(systemNameField);
+            editDialog.add(new JLabel("Model:"));
+            editDialog.add(modelField);
+            editDialog.add(new JLabel("Manufacturer:"));
+            editDialog.add(manufacturerField);
+            editDialog.add(new JLabel("Type:"));
+            editDialog.add(typeField);
+            editDialog.add(new JLabel("IP Address:"));
+            editDialog.add(ipAddressField);
+            editDialog.add(new JLabel("Department:"));
+            editDialog.add(departmentComboBox);
+
+            JButton saveButton = new JButton("Save");
+            saveButton.addActionListener(saveEvent -> {
+                try (Connection conn = DriverManager.getConnection(AssetTrackingApp.DATABASE_URL)) {
+                    String updateSql = "UPDATE assets SET systemName=?, model=?, manufacturer=?, type=?, ipAddress=?, department=? WHERE assetTag=?";
+                    try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+                        pstmt.setString(1, systemNameField.getText());
+                        pstmt.setString(2, modelField.getText());
+                        pstmt.setString(3, manufacturerField.getText());
+                        pstmt.setString(4, typeField.getText());
+                        pstmt.setString(5, ipAddressField.getText());
+                        pstmt.setString(6, (String) departmentComboBox.getSelectedItem());
+                        pstmt.setString(7, assetTag);
+
+                        int rowsUpdated = pstmt.executeUpdate();
+                        if (rowsUpdated > 0) {
+                            JOptionPane.showMessageDialog(editDialog, "Asset updated successfully!");
+                            tableModel.setValueAt(systemNameField.getText(), selectedRow, 1);
+                            tableModel.setValueAt(modelField.getText(), selectedRow, 2);
+                            tableModel.setValueAt(manufacturerField.getText(), selectedRow, 3);
+                            tableModel.setValueAt(typeField.getText(), selectedRow, 4);
+                            tableModel.setValueAt(ipAddressField.getText(), selectedRow, 5);
+                            tableModel.setValueAt(departmentComboBox.getSelectedItem(), selectedRow, 6);
+                            editDialog.dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(editDialog, "Asset not found!", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(editDialog, "Error updating asset: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            editDialog.add(new JLabel()); // Empty cell for alignment
+            editDialog.add(saveButton);
+
+            editDialog.pack();
+            editDialog.setLocationRelativeTo(editPanel);
+            editDialog.setVisible(true);
+        });
+
+        editPanel.add(editAssetButton, BorderLayout.SOUTH);
+        return editPanel;
+    }
+    JPanel createViewAssetPanel() {
+        JPanel viewPanel = new JPanel(new BorderLayout());
+        viewPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "View Assets"));
+
+        // Create a table to show assets
+        DefaultTableModel tableModel = new DefaultTableModel(new String[]{
+                "Asset Tag", "System Name", "Model", "Manufacturer", "Type", "IP Address",
+                "Purchase Date", "Employee First Name", "Employee Last Name", "Employee Email", "Department"
+        }, 0);
+        JTable assetTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(assetTable);
+
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.setBackground(new Color(0, 128, 0)); // Set background to green
+        refreshButton.setForeground(Color.WHITE); // Optional: Set text color to white
+        refreshButton.addActionListener(e -> viewAssets());
+
+        viewPanel.add(scrollPane, BorderLayout.CENTER);
+        viewPanel.add(refreshButton, BorderLayout.SOUTH);
+
+        return viewPanel;
+    }
+
+    // Method to view assets based on the currently logged-in user
+    private void viewAssets() {
+        // Clear the table before adding new data
+        DefaultTableModel tableModel = null;
+        tableModel.setRowCount(0);
+
+        // SQL query to fetch all assets
+        String sql = "SELECT * FROM assets";
+
+        try (Connection conn = DriverManager.getConnection(AssetTrackingApp.DATABASE_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            // Iterate through the result set and add rows to the table model
+            while (rs.next()) {
+                tableModel.addRow(new Object[]{
+                        rs.getString("assetTag"),
+                        rs.getString("systemName"),
+                        rs.getString("model"),
+                        rs.getString("manufacturer"),
+                        rs.getString("type"),
+                        rs.getString("ipAddress"),
+                        rs.getString("purchaseDate"),
+                        rs.getString("employeeFirstName"),
+                        rs.getString("employeeLastName"),
+                        rs.getString("employeeEmail"),
+                        rs.getString("department")
+                });
+            }
+        } catch (SQLException e) {
+            // Show an error message in case of failure
+            JOptionPane.showMessageDialog(this, "Error retrieving assets: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 }
 
 class User {
@@ -534,7 +812,6 @@ class User {
         this.department = department;
     }
 
-
     public String getPassword() {
         return password;
     }
@@ -547,172 +824,15 @@ class User {
         return lastName;
     }
 
-    // Method to create View Assets Panel
-//    private JPanel createViewAssetPanel() {
-//        JPanel viewPanel = new JPanel(new BorderLayout());
-//        viewPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "View Assets"));
-//
-//        // Create a table to show assets
-//        tableModel = new DefaultTableModel(new String[]{"Asset Tag", "System Name", "Model", "Manufacturer", "Type", "IP Address", "Purchase Date", "Employee First Name", "Employee Last Name", "Employee Email", "Department"}, 0);
-//        assetTable = new JTable(tableModel);
-//        JScrollPane scrollPane = new JScrollPane(assetTable);
-//
-//        JButton refreshButton = new JButton("Refresh");
-//        refreshButton.setBackground(new Color(0, 128, 0)); // Set background to green
-//        refreshButton.setForeground(Color.WHITE); // Optional: Set text color to white
-//        refreshButton.addActionListener(e -> viewAssets());
-//
-//        viewPanel.add(scrollPane, BorderLayout.CENTER);
-//        viewPanel.add(refreshButton, BorderLayout.SOUTH);
-//
-//        return viewPanel;
-//    }
+    public String getUsername() {
+        return username;
+    }
 
-    // Method to view assets from the database
-//    private void viewAssets() {
-//        if (currentUser == null) {
-//            JOptionPane.showMessageDialog(this, "Please log in to view assets.", "Not Logged In", JOptionPane.WARNING_MESSAGE);
-//            return;
-//        }
-//
-//        tableModel.setRowCount(0); // Clear existing data
-//
-//        String sql;
-//        if ("Admin".equals(currentUser.getDepartment())) {
-//            // Admin sees all assets
-//            sql = "SELECT * FROM assets";
-//        } else {
-//            // Other users see only assets in their department
-//            sql = "SELECT * FROM assets WHERE department = ?";
-//        }
-//
-//        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
-//             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//
-//            if (!"Admin".equals(currentUser.getDepartment())) {
-//                pstmt.setString(1, currentUser.getDepartment());
-//            }
-//
-//            try (ResultSet rs = pstmt.executeQuery()) {
-//                while (rs.next()) {
-//                    tableModel.addRow(new Object[]{
-//                            rs.getString("assetTag"),
-//                            rs.getString("systemName"),
-//                            rs.getString("model"),
-//                            rs.getString("manufacturer"),
-//                            rs.getString("type"),
-//                            rs.getString("ipAddress"),
-//                            rs.getString("purchaseDate"),
-//                            rs.getString("employeeFirstName"),
-//                            rs.getString("employeeLastName"),
-//                            rs.getString("employeeEmail"),
-//                            rs.getString("department")
-//                    });
-//                }
-//            }
-//        } catch (SQLException e) {
-//            JOptionPane.showMessageDialog(this, "Error retrieving assets: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//        }
-//    }
+    public Component createEditAssetPanel() {
+        return null;
+    }
 
-
-
-//    // Method to create Edit Asset panel
-//    private JPanel createEditAssetPanel() {
-//        JPanel editPanel = createAddAssetPanel(); // Reuse Add Asset Panel
-//        JButton editAssetButton = new JButton("Edit Asset");
-//
-//        editAssetButton.addActionListener(e -> editAsset());
-//
-//        editPanel.add(editAssetButton, BorderLayout.SOUTH);
-//        return editPanel;
-//    }
-//
-//    // Method to edit an asset in the database
-//    private void editAsset() {
-//        String assetTag = assetTagField.getText();
-//
-//        try (Connection conn = DriverManager.getConnection(DATABASE_URL)) {
-//            String sql = "UPDATE assets SET systemName=?, model=?, manufacturer=?, type=?, ipAddress=?, purchaseDate=?, notes=?, employeeFirstName=?, employeeLastName=?, employeeEmail=?, department=? WHERE assetTag=?";
-//            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//                pstmt.setString(1, systemNameField.getText());
-//                pstmt.setString(2, modelField.getText());
-//                pstmt.setString(3, manufacturerField.getText());
-//                pstmt.setString(4, typeField.getText());
-//                pstmt.setString(5, ipAddressField.getText());
-//                pstmt.setString(6, purchaseDateField.getText());
-//                pstmt.setString(7, notesField.getText());
-//                pstmt.setString(8, employeeFirstNameField.getText());
-//                pstmt.setString(9, employeeLastNameField.getText());
-//                pstmt.setString(10, employeeEmailField.getText());
-//                pstmt.setString(11, (String) departmentComboBox.getSelectedItem());
-//                pstmt.setString(12, assetTag);
-//
-//                int rowsUpdated = pstmt.executeUpdate();
-//                if (rowsUpdated > 0) {
-//                    JOptionPane.showMessageDialog(this, "Asset updated successfully!");
-//                    clearAssetFields();
-//                } else {
-//                    JOptionPane.showMessageDialog(this, "Asset not found!", "Error", JOptionPane.ERROR_MESSAGE);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            JOptionPane.showMessageDialog(this, "Error updating asset: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//        }
-//    }
-
-//    private JPanel createDeleteAssetPanel() {
-//        JPanel deletePanel = new JPanel(new BorderLayout());
-//        deletePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Delete Asset"));
-//
-//        // Resize the Asset Tag input field to be smaller
-//        JTextField assetTagToDeleteField = new JTextField(10);  // Size reduced for better visibility
-//        JButton deleteAssetButton = new JButton("Delete Asset");
-//
-//        deleteAssetButton.addActionListener(e -> {
-//            String assetTag = assetTagToDeleteField.getText().trim(); // Get the asset tag input
-//            if (!assetTag.isEmpty()) {
-//                int response = JOptionPane.showConfirmDialog(this,
-//                        "Are you sure you want to delete the asset with Asset Tag: " + assetTag + "?",
-//                        "Confirm Deletion",
-//                        JOptionPane.YES_NO_OPTION,
-//                        JOptionPane.WARNING_MESSAGE);
-//
-//                if (response == JOptionPane.YES_OPTION) {
-//                    boolean success = deleteAsset(assetTag); // Call the deleteAsset method
-//                    if (success) {
-//                        JOptionPane.showMessageDialog(this, "Asset deletion successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-//                    } else {
-//                        JOptionPane.showMessageDialog(this, "Asset deletion failed. Please check the Asset Tag.", "Error", JOptionPane.ERROR_MESSAGE);
-//                    }
-//                }
-//            } else {
-//                JOptionPane.showMessageDialog(this, "Please enter an Asset Tag to delete.", "Error", JOptionPane.ERROR_MESSAGE);
-//            }
-//        });
-//
-//        // Add components to the panel
-//        deletePanel.add(new JLabel("Enter Asset Tag to Delete:"), BorderLayout.NORTH);
-//        deletePanel.add(assetTagToDeleteField, BorderLayout.CENTER);
-//        deletePanel.add(deleteAssetButton, BorderLayout.SOUTH);
-//
-//        return deletePanel;
-//    }
-
-
-    // Method to delete an asset from the database
-//    private boolean deleteAsset(String assetTag) {
-//        // Establish database connection and prepare the deletion statement
-//        try (Connection conn = DriverManager.getConnection(DATABASE_URL)) {
-//            String sql = "DELETE FROM assets WHERE assetTag = ?";
-//            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//                pstmt.setString(1, assetTag);
-//                int rowsAffected = pstmt.executeUpdate(); // Returns number of rows affected
-//                return rowsAffected > 0; // Returns true if an asset was deleted
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace(); // Print the stack trace for debugging
-//            return false; // Return false in case of an error
-//        }
-//    }
+    public Component createViewAssetPanel() {
+        return null;
+    }
 }
